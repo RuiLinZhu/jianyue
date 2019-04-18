@@ -123,19 +123,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 {
   data: function data() {
     return {
@@ -145,17 +132,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
   },
-  onLoad: function onLoad() {
-    uni.setNavigationBarTitle({
-      title: '登录' });
-
-  },
+  onLoad: function onLoad() {},
   methods: {
     signIn: function signIn(userDTO) {
       var _this = this;
-      // console.log(userDTO.mobile + ',' + userDTO.password);
       uni.request({
-        url: 'http://127.0.0.1:8080/api/user/sign_in',
+        url: this.apiServer + '/user/sign_in',
         method: 'POST',
         data: {
           mobile: userDTO.mobile,
@@ -178,7 +160,9 @@ __webpack_require__.r(__webpack_exports__);
             uni.showToast({
               title: '登录成功' });
 
-            uni.navigateBack();
+            uni.switchTab({
+              url: '../my/my' });
+
           }
           //登录失败，弹出各种原因
           else {
@@ -280,7 +264,8 @@ var render = function() {
       _c(
         "button",
         {
-          attrs: { type: "primary", eventid: "298e97c8-2" },
+          staticClass: "green-btn",
+          attrs: { eventid: "298e97c8-2" },
           on: {
             tap: function($event) {
               _vm.signIn(_vm.userDTO)

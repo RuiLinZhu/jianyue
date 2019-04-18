@@ -125,15 +125,44 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+
+
+
+
+
+
 {
   data: function data() {
     return {
+      show: true,
+      count: '',
+      timer: null,
       mobile: '',
       verifyCode: '' };
 
   },
   onLoad: function onLoad() {},
   methods: {
+    getCode: function getCode() {var _this2 = this;
+      var TIME_COUNT = 60;
+      if (!this.timer) {
+        this.count = TIME_COUNT;
+        this.show = false;
+        this.timer = setInterval(function () {
+          if (_this2.count > 0 && _this2.count <= TIME_COUNT) {
+            _this2.count--;
+          } else {
+            _this2.show = true;
+            clearInterval(_this2.timer);
+            _this2.timer = null;
+          }
+        }, 1000);
+      }
+    },
     getVerifyCode: function getVerifyCode() {
       var _this = this;
       uni.request({
@@ -174,7 +203,7 @@ __webpack_require__.r(__webpack_exports__);
           console.log(res.data);
           if (res.data.code === 0) {
             uni.navigateTo({
-              url: '../password/password?mobile=' + _this.mobile });
+              url: '../signup/password?mobile=' + _this.mobile });
 
           } else {
             uni.showModal({
@@ -219,74 +248,103 @@ var render = function() {
     "view",
     { staticClass: "container" },
     [
-      _c(
-        "view",
-        { staticClass: "sign-box" },
-        [
+      _c("view", { staticClass: "one" }, [
+        _c("input", {
+          directives: [
+            {
+              name: "model",
+              rawName: "v-model",
+              value: _vm.mobile,
+              expression: "mobile"
+            }
+          ],
+          staticClass: "input-mobile",
+          attrs: {
+            type: "number",
+            placeholder: "请输入手机号",
+            required: "required",
+            eventid: "26f3b1f0-0"
+          },
+          domProps: { value: _vm.mobile },
+          on: {
+            input: function($event) {
+              if ($event.target.composing) {
+                return
+              }
+              _vm.mobile = $event.target.value
+            }
+          }
+        })
+      ]),
+      _c("view", { staticClass: "two" }, [
+        _c("view", { staticClass: "a" }, [
           _c("input", {
             directives: [
               {
                 name: "model",
                 rawName: "v-model",
-                value: _vm.mobile,
-                expression: "mobile"
+                value: _vm.verifyCode,
+                expression: "verifyCode"
               }
             ],
-            staticClass: "uni-input left",
+            staticClass: "input-yzm",
             attrs: {
               type: "number",
-              placeholder: "输入手机号",
+              placeholder: "请输入验证码",
               required: "required",
-              eventid: "26f3b1f0-0"
+              eventid: "26f3b1f0-1"
             },
-            domProps: { value: _vm.mobile },
+            domProps: { value: _vm.verifyCode },
             on: {
               input: function($event) {
                 if ($event.target.composing) {
                   return
                 }
-                _vm.mobile = $event.target.value
+                _vm.verifyCode = $event.target.value
               }
             }
-          }),
+          })
+        ]),
+        _c("view", { staticClass: "b", attrs: { type: "primary" } }, [
           _c(
-            "button",
+            "span",
             {
-              staticClass: "green-btn small-btn right",
-              attrs: { eventid: "26f3b1f0-1" },
-              on: { tap: _vm.getVerifyCode }
+              directives: [
+                {
+                  name: "show",
+                  rawName: "v-show",
+                  value: _vm.show,
+                  expression: "show"
+                }
+              ],
+              staticClass: "text",
+              attrs: { eventid: "26f3b1f0-2" },
+              on: {
+                click: function($event) {
+                  _vm.getCode()
+                },
+                tap: _vm.getVerifyCode
+              }
             },
             [_vm._v("获取验证码")]
+          ),
+          _c(
+            "span",
+            {
+              directives: [
+                {
+                  name: "show",
+                  rawName: "v-show",
+                  value: !_vm.show,
+                  expression: "!show"
+                }
+              ],
+              staticClass: "count"
+            },
+            [_vm._v(_vm._s(_vm.count) + "s后重新获得")]
           )
-        ],
-        1
-      ),
-      _c("input", {
-        directives: [
-          {
-            name: "model",
-            rawName: "v-model",
-            value: _vm.verifyCode,
-            expression: "verifyCode"
-          }
-        ],
-        staticClass: "uni-input",
-        attrs: {
-          type: "number",
-          placeholder: "输入验证码",
-          required: "required",
-          eventid: "26f3b1f0-2"
-        },
-        domProps: { value: _vm.verifyCode },
-        on: {
-          input: function($event) {
-            if ($event.target.composing) {
-              return
-            }
-            _vm.verifyCode = $event.target.value
-          }
-        }
-      }),
+        ])
+      ]),
       _c(
         "button",
         {

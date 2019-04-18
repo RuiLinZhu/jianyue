@@ -1,169 +1,257 @@
 <template>
 	<view class="container">
+		<!-- 顶部头像和昵称区域，纵向排列 -->
 		<view class="top">
 			<view class="avatar-box">
-				<image
-					src="../../static/default.png"
-					mode="scaleToFill"
-					class="avatar"
-					v-if="!storageData.login">
-					</image>
-				<image
-					:src="avatar"
-					mode="scaleToFill"
-					class="avatar"
-					v-if="storageData.login"
-				></image>
+				<image src="../../static/default.png" mode="scaleToFill" class="avatar" v-if="!storageData.login"></image>
+				<image :src="avatar" mode="scaleToFill" class="avatar" v-if="storageData.login"></image>
 			</view>
 			<view class="info-box">
-				<navigator url="../signin/signin" v-if="!storageData.login" class="btn">点击登录</navigator>
-				<text v-if="storageData.login" class="nname">{{nickname }}</text>
-				<navigator v-if="storageData.login" url="../setting/setting" class="set">个人设置</navigator>
+				<navigator url="../signin/signin" v-if="!storageData.login">点击登录</navigator>
+				<text v-if="storageData.login">{{ nickname }}</text>
+				<navigator url="../setting/setting" v-if="storageData.login"><text class="setting-txt">个人设置</text></navigator>
 			</view>
 		</view>
-		<view class="middle" v-if="storageData.login">
-			<view class="information" v-for="(info,index) in infos" :key="index">
-				<navigator class="un">{{info.number}}</navigator>
-				<navigator class="text">{{info.text}}</navigator>
+
+		<!-- 中间文章数量、好友数量、消息数量等统计区域，横向排列 -->
+		<view>
+			<scroll-view class="grace-tab-title grace-center" scroll-x="true" id="grace-tab-title">
+				<view v-for="(cate, index) in categories" :key="index" :data-cateid="cate.cateid" :data-index="index" :class="[cateCurrentIndex == index ? 'grace-tab-current' : '']"
+				 @tap="tabChange">
+					{{ cate.name }}
+				</view>
+			</scroll-view>
+			<view class="demo-content">
+				<!-- 文章部分 -->
+				<view class="content" v-if="cateCurrentIndex === 0">
+					<view class="list">
+						<view class="list-item" v-for="(article, index) in articles" :key="index">
+							<view class="title">
+							<text @tap="gotoDetail(article.id)">{{ article.title }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+				<!-- 关注部分 -->
+				<view class="content" v-if="cateCurrentIndex === 1">
+					<view class="list">
+						<view class="list-item" v-for="(follow, index) in follows" :key="index">
+							
+							<image :src="follow.avatar" class="avatar small"></image>
+							<view class="followedId">
+							<text style="margin-left: 20px;font-size: 20px;">{{ follow.nickname }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+				<!-- 收藏部分 -->
+				<view class="content" v-if="cateCurrentIndex === 2">
+					<text>收藏</text></view>
+				<!-- 积分部分 -->
+				<view class="content" v-if="cateCurrentIndex === 3">
+					<view class="list">
+						<view class="list-item" v-for="(followed, index) in followeds" :key="index">
+							
+							<image :src="followed.avatar" class="avatar small"></image>
+							<view class="followedId">
+							<text style="margin-left: 20px;font-size: 20px;">{{ followed.nickname }}</text>
+							</view>
+						</view>
+					</view>
+					</view>
 			</view>
 		</view>
-		<view class="bottom" v-if="storageData.login">
-			<view class="crt" v-for="(article,index) in articles" :key="index">
-				<navigator>{{article.text}}</navigator>
-			</view>
-		</view>
-		
 	</view>
 </template>
 
 <script>
-var loginRes, _self;
-export default {
-	data() {
-		var articlenum=10;
-		var follownum=5;
-		var msgnum=66;
-		var creditnum=100;
-		return {
-			avatar:uni.getStorageSync('login_key').avatar ,
-			nickname:uni.getStorageSync('login_key').nickname,
-			storageData: {
-			},
-			infos:[
-				{
-				"number":articlenum,
-				"text":"文章"
-			    },
-				{
-				"number":follownum,
-				"text":"关注"
-				},
-				{
-				"number":msgnum,
-				"text":"消息"
-				},{
-				"number":creditnum,
-				"text":"积分"
-			    }
-			],
-			articles:[
-				{
-					"text":"第一篇文章"
-				},
-				{
-					"text":"第二篇文章"
-				},
-				{
-					"text":"第三篇文章"
-				},
-				{
-					"text":"第四篇文章"
-				}
-			]
-		};
-	},
-	onLoad: function() {},
-	onShow: function() {
-		var _this = this;
-		const loginKey = uni.getStorageSync('login_key');
-		if (loginKey) {
-			// console.log(loginKey);
-			this.storageData = {
-				login: loginKey.login,
-				nickname: loginKey.nickname,
-				avatar: loginKey.avatar
+	var loginRes, _self;
+	export default {
+		data() {
+			return {
+				storageData: {
+					userId: 0,
+					nickname: ''
+					},
+				avatar: '',
+				nickname: '',
+				//分类信息
+				categories: [{
+					cateid: 0,
+					name: '文章'
+				}, {
+					cateid: 1,
+					name: '关注'
+				}, {
+					cateid: 2,
+					name: '收藏'
+				}, {
+					cateid: 3,
+					name: '粉丝'
+				}],
+				// 当前选择的分类
+				cateCurrentIndex: 0,
+				articles: [],
+				follows: [],
+				followeds:[]
 			};
-		} else {
-			this.storageData = {
-				login: false
-			};
-		}
-		uni.request({
-			url: 'http://localhost:8080/api/user/' + uni.getStorageSync('login_key').userId,
-			method: 'GET',
-			header: { 'content-type': 'application/json' },
-			success: res => {
-				if (res.data.code === 0) {
-					console.log(res.data.data.avatar+'————————————');
-					_this.avatar = res.data.data.avatar;
-					_this.nickname = res.data.data.nickname;
-				}
+		},
+		onLoad: function() {},
+		onShow: function() {
+			var _this = this;
+			const loginKey = uni.getStorageSync('login_key');
+			if (loginKey) {
+				this.storageData = {
+					login: loginKey.login,
+					nickname: loginKey.nickname,
+					avatar: loginKey.avatar,
+					userId: loginKey.userId
+				};
+// 				uni.request({
+// 					url: this.apiServer + '/article/user_count',
+// 					method: 'GET',
+// 					header: {
+// 						'content-type': 'application/x-www-form-urlencoded'
+// 					},
+// 					data: {
+// 						uId: this.storageData.userId
+// 					},
+// 					success: res => {
+// 						_this.articleCount = res.data.data;
+// 					}
+// 				});
+				uni.request({
+					url: this.apiServer + '/article/user',
+					method: 'GET',
+					header: {
+						'content-type': 'application/x-www-form-urlencoded'
+					},
+					data: {
+						uId: this.storageData.userId
+					},
+					success: res => {
+						_this.articles = res.data.data;
+					}
+				});
+				uni.request({
+					url: this.apiServer + '/follow/list',
+					method: 'GET',
+					header: {
+						'content-type': 'application/x-www-form-urlencoded'
+					},
+					data: {
+						fromUId: this.storageData.userId
+					},
+					success: res => {
+						_this.follows = res.data.data;
+					}
+				});
+				uni.request({
+					url: this.apiServer + '/follow/listed',
+					method: 'GET',
+					header: {
+						'content-type': 'application/x-www-form-urlencoded'
+					},
+					data: {
+						toUId: this.storageData.userId
+					},
+					success: res => {
+						_this.followeds = res.data.data;
+					}
+				});
+			} else {
+				this.storageData = {
+					login: false
+				};
 			}
-		});
-	},
-	methods: {
-		
-	}
-};
+			uni.request({
+				url: 'http://127.0.0.1:8080/api/user/' + uni.getStorageSync('login_key').userId,
+				method: 'GET',
+				header: {
+					'content-type': 'application/json'
+				},
+				success: res => {
+					if (res.data.code === 0) {
+						console.log(res.data.data.avatar + '————————————');
+						_this.avatar = res.data.data.avatar;
+						_this.nickname = res.data.data.nickname;
+					}
+				}
+			});
+		},
+		methods: {
+			tabChange: function(e) {
+				// 选中的索引
+				var index = e.currentTarget.dataset.index;
+				// 具体的分类id
+				var cateid = e.currentTarget.dataset.cateid;
+				this.cateCurrentIndex = index;
+				// 动态替换内容
+				this.content = this.categories[index].name;
+			},
+			gotoDetail: function(aId) {
+				uni.navigateTo({
+					url: '../article_detail/article_detail?aId=' + aId + '&userId=' + this.storageData.userId
+				});
+			}
+		}
+	};
 </script>
 
 <style scoped>
-	.avatar-box{
-		text-align: center;
-		margin-top: 10px;
-	}
-	.info-box{
+	.top {
 		display: flex;
-		font-size: 13px;
+		flex-direction: column;
+		text-align: center;
+		height: 100px;
+		margin-top: 5px;
 	}
-	.nname{
-		padding-left: 130px;
-		margin-right: 20px;
+
+	.avatar-box {
+		flex: 1 1 30%;
 	}
-	.set{
-		color: rgb(26,173,25);
-	}
-	.middle{
+
+	.info-box {
+		flex: 1 1 70%;
 		display: flex;
-		margin-top: 10px;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.setting-txt {
+		color: #00b26a;
+		margin-left: 15px;
+	}
+
+	.center {
+		display: flex;
+		justify-content: center;
+	}
+
+	.info {
+		flex: 1 1 25%;
+		display: flex;
+		flex-direction: column;
 		text-align: center;
+		border-right: 1px solid #eee;
 	}
-	.information{
-	    width: 70%;
-		/* margin-right: 10px; */
-		text-align: center;
-		/* margin-left: 10px; */
-		border-right: 1px solid #8F8F94;
+
+	.title {
+		font-size: 14pt;
 	}
-	.un{
-		font-family: "黑体";
-		font-size: 25px;
-	}
-	.text{
-		font-size: 13px;
-	}
-	.bottom{
+
+	.content {
 		margin-top: 20px;
 	}
-	.crt{
-		margin-bottom: 30px;
-		border-top: 1px solid #8F8F94;
-		/* border-left-color: #8F8F94;
-		border-left-width: 2px; */
+	.list-item{
+		height: 120upx;
+		font-size: 50upx;
+		display: flex;
 	}
-	.btn{
-		margin-top: 20px;
-		margin-left: 150px;
-		color: rgb(26,173,25);
+	.title{
+		margin-top: 50upx;
+	}
+	.followedId{
+		margin-top: 50upx;
 	}
 </style>

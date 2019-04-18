@@ -10,7 +10,8 @@
     "pages/setting/setting",
     "pages/signup/signup",
     "pages/signup/password",
-    "pages/rename/rename"
+    "pages/rename/rename",
+    "pages/article_detail/article_detail"
   ],
   "subPackages": [],
   "window": {

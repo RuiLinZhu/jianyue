@@ -152,49 +152,63 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var loginRes, _self;var _default =
 {
   data: function data() {
-    var articlenum = 10;
-    var follownum = 5;
-    var msgnum = 66;
-    var creditnum = 100;
     return {
-      avatar: uni.getStorageSync('login_key').avatar,
-      nickname: uni.getStorageSync('login_key').nickname,
-      storageData: {},
+      storageData: {
+        userId: 0,
+        nickname: '' },
 
-      infos: [
+      avatar: '',
+      nickname: '',
+      //分类信息
+      categories: [{
+        cateid: 0,
+        name: '文章' },
       {
-        "number": articlenum,
-        "text": "文章" },
-
+        cateid: 1,
+        name: '关注' },
       {
-        "number": follownum,
-        "text": "关注" },
-
+        cateid: 2,
+        name: '收藏' },
       {
-        "number": msgnum,
-        "text": "消息" },
-      {
-        "number": creditnum,
-        "text": "积分" }],
+        cateid: 3,
+        name: '粉丝' }],
 
-
-      articles: [
-      {
-        "text": "第一篇文章" },
-
-      {
-        "text": "第二篇文章" },
-
-      {
-        "text": "第三篇文章" },
-
-      {
-        "text": "第四篇文章" }] };
-
-
+      // 当前选择的分类
+      cateCurrentIndex: 0,
+      articles: [],
+      follows: [],
+      followeds: [] };
 
   },
   onLoad: function onLoad() {},
@@ -202,11 +216,63 @@ var loginRes, _self;var _default =
     var _this = this;
     var loginKey = uni.getStorageSync('login_key');
     if (loginKey) {
-      // console.log(loginKey);
       this.storageData = {
         login: loginKey.login,
         nickname: loginKey.nickname,
-        avatar: loginKey.avatar };
+        avatar: loginKey.avatar,
+        userId: loginKey.userId };
+
+      // 				uni.request({
+      // 					url: this.apiServer + '/article/user_count',
+      // 					method: 'GET',
+      // 					header: {
+      // 						'content-type': 'application/x-www-form-urlencoded'
+      // 					},
+      // 					data: {
+      // 						uId: this.storageData.userId
+      // 					},
+      // 					success: res => {
+      // 						_this.articleCount = res.data.data;
+      // 					}
+      // 				});
+      uni.request({
+        url: this.apiServer + '/article/user',
+        method: 'GET',
+        header: {
+          'content-type': 'application/x-www-form-urlencoded' },
+
+        data: {
+          uId: this.storageData.userId },
+
+        success: function success(res) {
+          _this.articles = res.data.data;
+        } });
+
+      uni.request({
+        url: this.apiServer + '/follow/list',
+        method: 'GET',
+        header: {
+          'content-type': 'application/x-www-form-urlencoded' },
+
+        data: {
+          fromUId: this.storageData.userId },
+
+        success: function success(res) {
+          _this.follows = res.data.data;
+        } });
+
+      uni.request({
+        url: this.apiServer + '/follow/listed',
+        method: 'GET',
+        header: {
+          'content-type': 'application/x-www-form-urlencoded' },
+
+        data: {
+          toUId: this.storageData.userId },
+
+        success: function success(res) {
+          _this.followeds = res.data.data;
+        } });
 
     } else {
       this.storageData = {
@@ -214,9 +280,11 @@ var loginRes, _self;var _default =
 
     }
     uni.request({
-      url: 'http://localhost:8080/api/user/' + uni.getStorageSync('login_key').userId,
+      url: 'http://127.0.0.1:8080/api/user/' + uni.getStorageSync('login_key').userId,
       method: 'GET',
-      header: { 'content-type': 'application/json' },
+      header: {
+        'content-type': 'application/json' },
+
       success: function success(res) {
         if (res.data.code === 0) {
           console.log(res.data.data.avatar + '————————————');
@@ -226,7 +294,21 @@ var loginRes, _self;var _default =
       } });
 
   },
-  methods: {} };exports.default = _default;
+  methods: {
+    tabChange: function tabChange(e) {
+      // 选中的索引
+      var index = e.currentTarget.dataset.index;
+      // 具体的分类id
+      var cateid = e.currentTarget.dataset.cateid;
+      this.cateCurrentIndex = index;
+      // 动态替换内容
+      this.content = this.categories[index].name;
+    },
+    gotoDetail: function gotoDetail(aId) {
+      uni.navigateTo({
+        url: '../article_detail/article_detail?aId=' + aId + '&userId=' + this.storageData.userId });
+
+    } } };exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ "./node_modules/@dcloudio/uni-mp-weixin/dist/index.js")["default"]))
 
 /***/ }),
@@ -278,63 +360,154 @@ var render = function() {
         { staticClass: "info-box" },
         [
           !_vm.storageData.login
-            ? _c(
-                "navigator",
-                { staticClass: "btn", attrs: { url: "../signin/signin" } },
-                [_vm._v("点击登录")]
-              )
-            : _vm._e(),
-          _vm.storageData.login
-            ? _c("text", { staticClass: "nname" }, [
-                _vm._v(_vm._s(_vm.nickname))
+            ? _c("navigator", { attrs: { url: "../signin/signin" } }, [
+                _vm._v("点击登录")
               ])
             : _vm._e(),
           _vm.storageData.login
-            ? _c(
-                "navigator",
-                { staticClass: "set", attrs: { url: "../setting/setting" } },
-                [_vm._v("个人设置")]
-              )
+            ? _c("text", [_vm._v(_vm._s(_vm.nickname))])
+            : _vm._e(),
+          _vm.storageData.login
+            ? _c("navigator", { attrs: { url: "../setting/setting" } }, [
+                _c("text", { staticClass: "setting-txt" }, [_vm._v("个人设置")])
+              ])
             : _vm._e()
         ],
         1
       )
     ]),
-    _vm.storageData.login
-      ? _c(
-          "view",
-          { staticClass: "middle" },
-          _vm._l(_vm.infos, function(info, index) {
+    _c(
+      "view",
+      [
+        _c(
+          "scroll-view",
+          {
+            staticClass: "grace-tab-title grace-center",
+            attrs: { "scroll-x": "true", id: "grace-tab-title" }
+          },
+          _vm._l(_vm.categories, function(cate, index) {
             return _c(
               "view",
-              { key: index, staticClass: "information" },
-              [
-                _c("navigator", { staticClass: "un" }, [
-                  _vm._v(_vm._s(info.number))
-                ]),
-                _c("navigator", { staticClass: "text" }, [
-                  _vm._v(_vm._s(info.text))
-                ])
-              ],
-              1
+              {
+                key: index,
+                class: [
+                  _vm.cateCurrentIndex == index ? "grace-tab-current" : ""
+                ],
+                attrs: {
+                  "data-cateid": cate.cateid,
+                  "data-index": index,
+                  eventid: "57791b08-0-" + index
+                },
+                on: { tap: _vm.tabChange }
+              },
+              [_vm._v(_vm._s(cate.name))]
             )
           })
-        )
-      : _vm._e(),
-    _vm.storageData.login
-      ? _c(
-          "view",
-          { staticClass: "bottom" },
-          _vm._l(_vm.articles, function(article, index) {
-            return _c(
-              "view",
-              { key: index, staticClass: "crt" },
-              [_c("navigator", [_vm._v(_vm._s(article.text))])],
-              1
-            )
-          })
-        )
-      : _vm._e()
+        ),
+        _c("view", { staticClass: "demo-content" }, [
+          _vm.cateCurrentIndex === 0
+            ? _c("view", { staticClass: "content" }, [
+                _c(
+                  "view",
+                  { staticClass: "list" },
+                  _vm._l(_vm.articles, function(article, index) {
+                    return _c(
+                      "view",
+                      { key: index, staticClass: "list-item" },
+                      [
+                        _c("view", { staticClass: "title" }, [
+                          _c(
+                            "text",
+                            {
+                              attrs: { eventid: "57791b08-1-" + index },
+                              on: {
+                                tap: function($event) {
+                                  _vm.gotoDetail(article.id)
+                                }
+                              }
+                            },
+                            [_vm._v(_vm._s(article.title))]
+                          )
+                        ])
+                      ]
+                    )
+                  })
+                )
+              ])
+            : _vm._e(),
+          _vm.cateCurrentIndex === 1
+            ? _c("view", { staticClass: "content" }, [
+                _c(
+                  "view",
+                  { staticClass: "list" },
+                  _vm._l(_vm.follows, function(follow, index) {
+                    return _c(
+                      "view",
+                      { key: index, staticClass: "list-item" },
+                      [
+                        _c("image", {
+                          staticClass: "avatar small",
+                          attrs: { src: follow.avatar }
+                        }),
+                        _c("view", { staticClass: "followedId" }, [
+                          _c(
+                            "text",
+                            {
+                              staticStyle: {
+                                "margin-left": "20px",
+                                "font-size": "20px"
+                              }
+                            },
+                            [_vm._v(_vm._s(follow.nickname))]
+                          )
+                        ])
+                      ]
+                    )
+                  })
+                )
+              ])
+            : _vm._e(),
+          _vm.cateCurrentIndex === 2
+            ? _c("view", { staticClass: "content" }, [
+                _c("text", [_vm._v("收藏")])
+              ])
+            : _vm._e(),
+          _vm.cateCurrentIndex === 3
+            ? _c("view", { staticClass: "content" }, [
+                _c(
+                  "view",
+                  { staticClass: "list" },
+                  _vm._l(_vm.followeds, function(followed, index) {
+                    return _c(
+                      "view",
+                      { key: index, staticClass: "list-item" },
+                      [
+                        _c("image", {
+                          staticClass: "avatar small",
+                          attrs: { src: followed.avatar }
+                        }),
+                        _c("view", { staticClass: "followedId" }, [
+                          _c(
+                            "text",
+                            {
+                              staticStyle: {
+                                "margin-left": "20px",
+                                "font-size": "20px"
+                              }
+                            },
+                            [_vm._v(_vm._s(followed.nickname))]
+                          )
+                        ])
+                      ]
+                    )
+                  })
+                )
+              ])
+            : _vm._e()
+        ])
+      ],
+      1
+    )
   ])
 }
 var staticRenderFns = []

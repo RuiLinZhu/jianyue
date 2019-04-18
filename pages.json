@@ -52,6 +52,10 @@
 		{
 			"path": "pages/rename/rename",
 			"style": {}
+		},
+		{
+			"path": "pages/article_detail/article_detail",
+			"style": {}
 		}
 	],
 	"globalStyle": {
